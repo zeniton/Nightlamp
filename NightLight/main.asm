@@ -2,43 +2,39 @@
 ; written by: Stoffel van Aswegen 
 ; date: 2019-08-17
 ; version: 0.0
-; file saved as: NightLight.asm
-; for AVR: attiny85
+; for AVR: ATTiny85
 ; clock frequency: 1 MHz
-; Function: Night light controller 
-;	with motion detection
+; Function: Night light controller with motion detection
 ;
-;                                         Vcc
-;                                          ^
+;                                         +5V
 ;                          ATTiny85        |
-;                         -----------      |
-;                         | 1     8 |-------     ----------
-;                         |         | INT0      | Motion   |
-;                         | 2     7 |-----------|          |
-;         (Day/night)     |         |           | Detector |
-;         ----------------| 3     6 |           -----------
-;         |               |         |      |\|
-;         |       --------| 4     5 |------| |-----/\/\/---
-;         |       |       -----------      |/|       R    |
-;         |       |                        LED            |
-;         |       |                                       |
-;         |       |                                       |
-;         V       V                                       V
-
+;                         +---------+      |
+;                         | 1     8 |------+
+;                         |         |
+;                         | 2     7 |
+;                         |         |
+;                         | 3     6 |
+;                         |         |
+;                 +-------| 4     5 |------+----> Lamp
+;                 |       +---------+      |
+;                 |                       _|_
+;                 |                      _\_/_ LED
+;                 |                        |
+;                 |                        >
+;                 |                        < 220R
+;                _|_                      _|_
+;                ///                      ///
+										     
 .nolist
 .include "tn85def.inc"
 .list
 
-;==============
-; Declarations:
-;.def	var = Rnn
-;.equ	var = K
-.def status		= r15		;Copy of Status Register
-.def tmp		= r16		;General accumulator
-.def tcint		= r17		;Timer Compare Interrupt counter
-.def seconds	= r18		;Seconds counter
-.def minutes	= r19		;Minutes counter
-.def hours		= r20		;Hours counter
+.def status		= r15	;Copy of Status Register
+.def tmp		= r16	;General accumulator
+.def tcint		= r17	;Timer Compare Interrupt counter
+.def seconds	= r18	;Seconds counter
+.def minutes	= r19	;Minutes counter
+.def hours		= r20	;Hours counter
 
 .equ LAMP		= PB0
 
@@ -71,6 +67,19 @@ EXIT_ISR_A:
 	reti
 
 
+;===Subroutines===
+Sub_TimerOn:
+	ldi tcint,4			;Reset interrupt counter
+	ldi tmp,(1<<CS02)|(1<<CS00)
+	out TCCR0B,tmp		;Prescale Clock/1024
+	ret
+
+Sub_TimerOff:
+	clr tmp
+	out TCCR0B,tmp		;Stop timer
+	ret
+
+
 START:
 	;PORTB setup
 	ldi tmp,(1<<LAMP)	;Lamp output
@@ -87,17 +96,14 @@ START:
 	out TCCR0A,tmp
 	ldi tmp,244			;TIMER0 compare value
 	out OCR0A,tmp
-	ldi tmp,(1<<OCIE0A)	;Enable output compare interrupt
-	out TIMSK,tmp
+	ldi tmp,(1<<OCIE0A)
+	out TIMSK,tmp		;Enable output compare interrupt
 
 	;Setup timing counters
-	ldi tcint,4
 	ldi seconds,1
-	sei					;Enable global interrupts
+	rcall Sub_TimerOn
 
-	;Prescale clock (will also start it)
-	ldi tmp,(1<<CS02)|(1<<CS00)
-	out TCCR0B,tmp		;Clock/1024: CS0[2:0] = 101
+	sei					;Enable global interrupts
 
 LOOP:
 	tst seconds			;=0?

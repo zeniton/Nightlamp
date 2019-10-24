@@ -1,0 +1,9 @@
+- Select voltage reference by writing to the REFS[2:0] bits in ADMUX
+    REFS[210] = X00 (Initial value)
+- Set analog input channel by writing to the MUX[3:0] bits in ADMUX
+    MUX[3210] = 0010 (PB4/pin3)
+                0011 (PB3/pin2)
+- The ADC is enabled by setting the ADC Enable bit ADEN in ADCSRA
+- Enable ADC interrupt: ADCSRA[ADIE]
+- A single conversion is started by writing a logical 1 to ADCSRA
+- The ADC generates a 10-bit result and stored in ADCH and ADCL

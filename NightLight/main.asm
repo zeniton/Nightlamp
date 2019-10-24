@@ -5,22 +5,28 @@
 ; for AVR: ATTiny85
 ; clock frequency: 1 MHz
 ; Function: Night light controller with motion detection
+;	Ambient light level measured with LDR
+;	Switch lamp on for 2-3hrs at sunset
+;	Switch lamp on for 10mins when dark & motion detected and lamp is off
+;	LDR circuit only switched on during measuring
 ;
-;                +5V       ATTiny85        +5V
-;                 |       +---------+       |
-;                 +--1k---| 1     8 |-------+
-;                   Reset |         |
-;                         | 2     7 |<-PB2/INT0--------> Motion detector
-;                         |         |
-;                         | 3     6 |
-;                         |         |
-;                 +-------| 4     5 |>-PB0--+----------> Lamp
-;                 |       +---------+      _|_
-;                 |                       _\_/_ LED
-;                 |                         |
-;                 |                        220R
-;                _|_                       _|_
-;                ///                       ///
+;                       +5V                          +5V
+;                        |                            |
+;                       1k           ATTiny85         |
+;                        |         +----------+       |
+;                        +---RESET-| 1      8 |-Vcc---+
+;                                  |          |
+;         +-------+-----------PB3-<| 2      7 |<-PB2/INT0--------> Motion detector
+;         |       |                |          |
+;   LED  _|_     LDR   +-----ADC2->| 3      6 |
+;   ind _\_/_     |    |           |          |
+;         |       +----+   +---GND-| 4      5 |>-PB0--+----------> Lamp
+;         |       |        |       +----------+      _|_
+;        220R    10k       |                        _\_/_ LED indicator
+;         |       |        |                          |
+;         |       |        |                         220R
+;        _|_     _|_      _|_                        _|_
+;        ///     ///      ///                        ///
 										     
 .nolist
 .include "tn85def.inc"
@@ -35,6 +41,7 @@
 .def system	= r21	;System flags: bit0=1/0(movement/not)
 
 .equ LAMP	= PB0	;Lamp (output)
+.equ LDR	= PB3	;LDR power
 .equ MOTION	= PB2	;Motion detector (input)
 .equ MOVEMENT	= 0	;System flag
 
@@ -60,7 +67,6 @@ ISR_1:	in	status,SREG		;Save status
 	ori	system,(1<<MOVEMENT)	;Set system flag
 	out	SREG,status		;Restore status
 	reti
-
 
 ISR_A:	in status,SREG			;Save status
 	dec tcint			;Interrupt counter
@@ -99,10 +105,16 @@ START:
 	out TIMSK,tmp			;Enable output compare interrupt
 
 	;Setup PORTB
-	ldi	tmp,(1<<DDB0)
-	out	DDRB,tmp		;Lamp output
-	ldi	tmp,(1<<DDB4) | (1<<DDB3) | (1<<DDB2) | (1<<DDB1)
+	ldi	tmp,(1<<DDB0) | (1<<DDB3)
+	out	DDRB,tmp		;Outputs: lamp & LDR circuit
+	ldi	tmp,(1<<DDB4) | (1<<DDB2) | (1<<DDB1)
 	out	PORTB,tmp		;Enable input pull-ups
+
+	;Setup ADC
+	ldi	tmp,(1<<MUX1)		;ADC2 channel (MUX)
+	out	ADMUX,tmp		;Vref = Vcc (REFSn)
+	ldi	tmp,(1<<ADEN)		;Enable ADC
+	out	ADCSRA,tmp
 
 	;Setup INT0 external interrupt
 	clr	tmp 			;Trigger INT0 interrupt on low level
@@ -111,6 +123,7 @@ START:
 	out	GIMSK,tmp		;Enable INT0 interrupt
 
 	cbi	PORTB,LAMP		;Lamp off
+	cbi	PORTB,LDR		;LDR off
 	clr	system
 	sei				;Enable global interrupts
 

@@ -10,30 +10,29 @@
 ;	Switch lamp on for 10mins when dark & motion detected and lamp is off
 ;	LDR circuit only switched on during measuring
 ;       
-;     +5V              +5V                          +5V                       +5V
-;      |                |                            |                         |
-;      |               1k           ATTiny85         |                         |
-;      |                |         +----------+       |                         |
-;      c\               +--RESET--| 1      8 |--Vcc--+       +--------+       10k
-;        \|                       |          |               |Motion  |        |
-;         |------+-----------PB3-<| 2      7 |<-PB2/INT0---->|detector|        |
-;        /|      |                |          |               +--------+        |
-;      e/       LDR   +-----ADC2->| 3      6 |<-PB1----------------------------+-------+
-;     _|_        |    |           |          |               +--------+        |       |
-;    _\_/_       +----+   +--GND--| 4      5 |>-PB0--+------>|  Lamp  |       1k       |
-;      |         |        |       +----------+      _|_      +--------+        |       O|
-;      |         |        |                    LED _\_/_                      ---       |=O Level Set
-;    220R       10k       |                    ind   |                  100nF ---      O|   Button
-;      |         |        |                         220R                       |       |
-;     _|_       _|_      _|_                        _|_                       _|_     _|_
-;     ///       ///      ///                        ///                       ///     ///
+;   +5V ---+------+----------------------------+------+
+;          |      |                            |      |
+;          |     1k           ATTiny85         |      |
+;          |      |         +----------+       |      |
+;         LDR     +--RESET--| 1      8 |--Vcc--+     10k              +--------+
+;          |                |          |              |               |Motion  |
+;          |                | 2      7 |<-PB2---@1    |          @1---|detector|
+;          |                |          |              |               +--------+
+;          +----------ADC2->| 3      6 |<-PB1---------+----+
+;          |                |          |              |    |          +--------+
+;          |      +----GND--| 4      5 |>-PB0---@2    |    |     @2---|  Lamp  |
+;         100k    |         +----------+             1k    |          +--------+
+;          |      |                                   |    O |
+;          |      |                            100nF ---     |=O Level Set
+;          |      |                                  ---   O |   Button
+;          |      |                                   |    |
+;   GND ---+------+-----------------------------------+----+
 										     
 .nolist
 .include "tn85def.inc"
 .list
 
-.def status	= r14	;Copy of Status Register
-.def seconds = r15  ;Copy of secs register
+.def status	= r15	;Copy of Status Register
 .def tmp	= r16	;General register
 .def tcint	= r17	;Timer Compare Interrupt counter
 .def secs   = r18	;Seconds counter
@@ -42,7 +41,6 @@
 .def system	= r21	;System flags: bit0=1/0(movement/not)
 
 .equ LAMP       = PB0	;Lamp (output)
-.equ LDR        = PB3	;LDR power (output)
 .equ MOTION     = PB2	;Motion detector (input)
 .equ BUTTON     = PB1	;Level Set button (input)
 .equ TIMER      = 0     ;System flag
@@ -93,22 +91,6 @@ Sub_TimerOff:
 	ret
 
 Sub_SampleLight:
-    rcall Sub_TimerOff
-    in  seconds, secs   ;Backup secs
-
-	sbi	PORTB,LDR		;LDR on
-	ldi	secs,1
-	rcall Sub_TimerOn
-	L1:
-		tst	secs
-        breq LDR_off
-        rjmp L1
-LDR_OFF:
-    rcall Sub_TimerOff
-	cbi	PORTB,LDR		;LDR off
-
-    out secs, seconds   ;Restore timer
-    rcall Sub_TimerOn
     ret
 ;=================
 
@@ -127,7 +109,7 @@ START:
 	out TIMSK,tmp		;Enable output compare interrupt
 
 	;Setup PORTB
-	ldi	tmp,(1<<DDB0) | (1<<DDB3)
+	ldi	tmp,(1<<DDB0)
 	out DDRB,tmp		;Outputs: lamp & LDR circuit
 	ldi	tmp,(1<<DDB4) | (1<<DDB2) | (1<<DDB1)
 	out	PORTB,tmp		;Enable input pull-ups
@@ -145,7 +127,6 @@ START:
 	out	GIMSK,tmp		;Enable INT0 interrupt
 
 	cbi	PORTB,LAMP		;Lamp off
-	cbi	PORTB,LDR		;LDR off
 	clr	system
 	sei                 ;Enable global interrupts
 
@@ -176,3 +157,4 @@ LOOP:
 	cbi	PORTB,LAMP		;Lamp off
 	rcall	Sub_TimerOff
 	rjmp	LOOP
+

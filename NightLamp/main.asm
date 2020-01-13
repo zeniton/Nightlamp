@@ -18,7 +18,7 @@
 ;          |                |          |              |               |Motion  |
 ;          |                | 2      7 |<-PB2---@1    |          @1---|detector|
 ;          |                |          |              |               +--------+
-;          +----------ADC2->| 3      6 |<-PB1---------+----+
+;          +------ADC2/PB4->| 3      6 |<-PB1---------+----+
 ;          |                |          |              |    |          +--------+
 ;          |      +----GND--| 4      5 |>-PB0---@2    |    |     @2---|  Lamp  |
 ;         100k    |         +----------+             1k    |          +--------+
@@ -40,15 +40,18 @@
 .def hours	= r20	;Hours counter
 .def system	= r21	;System flags: bit0=1/0(movement/not)
 
+;Flags
+.equ TIMER      = 0
+.equ MOVEMENT   = 1
+
+;I/O
 .equ LAMP       = PB0	;Lamp (output)
 .equ MOTION     = PB2	;Motion detector (input)
 .equ BUTTON     = PB1	;Level Set button (input)
-.equ TIMER      = 0     ;System flag
-.equ MOVEMENT   = 1
 
 .org 0x0000
-rjmp START				;0x0000 RESET
-rjmp ISR_1				;0x0001 INT0
+rjmp RESET				;0x0000 RESET
+rjmp INT0_ISR			;0x0001 INT0
 reti					;0x0002 PCINT0
 reti					;0x0003 TIMER1_COMPA
 reti					;0x0004 TIMER1_OVF
@@ -57,24 +60,26 @@ reti					;0x0006 EE_RDY
 reti					;0x0007 ANA_COMP
 reti					;0x0008 ADC
 reti					;0x0009 TIMER1_COMPB
-rjmp ISR_A				;0x000A TIMER0_COMPA
+rjmp TIMER0_COMPA_ISR	;0x000A TIMER0_COMPA
 reti					;0x000B TIMER0_COMPB
 reti					;0x000C WDT
 reti					;0x000D USI_START
 reti					;0x000E USI_OVF
 
-
-ISR_1:	in	status,SREG         ;Save status
+INT0_ISR: in 
+    status,SREG                 ;Save status
 	ori	system,(1<<MOVEMENT)	;Set system flag
 	out	SREG,status             ;Restore status
 	reti
 
-ISR_A:	in status,SREG	;Save status
+TIMER0_COMPA_ISR:	
+    in status,SREG      ;Save status
 	dec tcint			;Interrupt counter
 	brne EXIT_A
 	ldi tcint,4			;Reset counter
 	dec secs
-EXIT_A:	out SREG,status	;Restore status
+EXIT_A:	
+    out SREG,status	    ;Restore status
 	reti
 
 
@@ -95,8 +100,8 @@ Sub_SampleLight:
 ;=================
 
 
-START:
-	;Timer0 setup
+RESET:
+	;Setup Timer0
 	;	With the 1MHz clock prescaled by 1024, the effective rate is 976kHz
 	;	976 = 244 * 4
 	;	Setting the Output Compare Register to 244, the TIMER0_COMPA interrupt will fire every 250ms
@@ -110,7 +115,7 @@ START:
 
 	;Setup PORTB
 	ldi	tmp,(1<<DDB0)
-	out DDRB,tmp		;Outputs: lamp & LDR circuit
+	out DDRB,tmp		;Outputs: lamp
 	ldi	tmp,(1<<DDB4) | (1<<DDB2) | (1<<DDB1)
 	out	PORTB,tmp		;Enable input pull-ups
 
@@ -120,7 +125,7 @@ START:
 	ldi	tmp,(1<<ADEN)   ;Enable ADC
 	out	ADCSRA,tmp
 
-	;Setup INT0 external interrupt
+	;Setup INT0 external interrupt (Motion Detector)
 	clr	tmp 			;Trigger INT0 interrupt on low level
 	out	MCUCR,tmp
 	ldi	tmp,(1<<INT0)
@@ -131,30 +136,29 @@ START:
 	sei                 ;Enable global interrupts
 
 LOOP:
-	sbrs	system,MOVEMENT
-	rjmp	LOOP
-	sbi	PORTB,LAMP		;Lamp on
-;	ldi	secs,3
-	ldi	mins,1
-	rcall	Sub_TimerOn
+	sbrs system,MOVEMENT
+	rjmp LOOP
+	sbi PORTB,LAMP		;Lamp on
+	ldi hours,3
+	rcall Sub_TimerOn
 	TMR_LOOP:
-		tst	secs
-		brne	TMR_LOOP
-		tst	mins
-		breq	TST_HOURS
-		dec	mins
+		tst secs        ;seconds decremented in ISR
+		brne TMR_LOOP
+		tst mins
+		breq TST_HOURS
+		dec mins
 		ldi	secs,60
-		rjmp	TMR_LOOP
+		rjmp TMR_LOOP
 		TST_HOURS:
-			tst	hours
-			breq	EXIT_TMR_LOOP
-			dec	hours
-			ldi	mins,59
-			ldi	secs,60
-			rjmp	TMR_LOOP
+			tst hours
+			breq EXIT_TMR_LOOP
+			dec hours
+			ldi mins,59
+			ldi secs,60
+			rjmp TMR_LOOP
 	EXIT_TMR_LOOP:
-	andi	system,(0<<MOVEMENT)	;Clear system flag
-	cbi	PORTB,LAMP		;Lamp off
-	rcall	Sub_TimerOff
-	rjmp	LOOP
+	andi system,(0<<MOVEMENT)	;Clear system flag
+	cbi PORTB,LAMP		;Lamp off
+	rcall Sub_TimerOff
+	rjmp LOOP
 

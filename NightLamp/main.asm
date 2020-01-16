@@ -10,23 +10,23 @@
 ;	Switch lamp on for 10mins when dark & motion detected and lamp is off
 ;	LDR circuit only switched on during measuring
 ;       
-;   +5V ---+------+----------------------------+------+
-;          |      |                            |      |
-;          |     1k           ATTiny85         |      |
-;          |      |         +----------+       |      |
-;         LDR     +--RESET--| 1      8 |--Vcc--+     10k              +--------+
-;          |                |          |              |               |Motion  |
-;          |                | 2      7 |<-PB2---@1    |          @1---|detector|
-;          |                |          |              |               +--------+
-;          +------ADC2/PB4->| 3      6 |<-PB1---------+----+
-;          |                |          |              |    |          +--------+
-;          |      +----GND--| 4      5 |>-PB0---@2    |    |     @2---|  Lamp  |
-;         100k    |         +----------+             1k    |          +--------+
-;          |      |                                   |    O |
-;          |      |                            100nF ---     |=O Level Set
-;          |      |                                  ---   O |   Button
-;          |      |                                   |    |
-;   GND ---+------+-----------------------------------+----+
+;   +5V ---+------+----------------------------+
+;          |      |                            |
+;          |     1k           ATTiny85         |
+;          |      |         +----------+       |
+;         LDR     +--RESET--| 1      8 |--Vcc--+                      +--------+
+;          |                |          |                              |Motion  |
+;          |                | 2      7 |<-PB2-------------------------|detector|
+;          |                |          |                              +--------+
+;          +------ADC2/PB4->| 3      6 |
+;          |                |          |                              +--------+
+;          |      +----GND--| 4      5 |>-PB0-------------------------|  Lamp  |
+;      100k Pot   |         +----------+                              +--------+
+;          |      |
+;          |      |
+;          |      |
+;          |      |
+;   GND ---+------+
 										     
 .nolist
 .include "tn85def.inc"
@@ -47,7 +47,6 @@
 ;I/O
 .equ LAMP       = PB0	;Lamp (output)
 .equ MOTION     = PB2	;Motion detector (input)
-.equ BUTTON     = PB1	;Level Set button (input)
 
 .org 0x0000
 rjmp RESET				;0x0000 RESET
@@ -116,7 +115,7 @@ RESET:
 	;Setup PORTB
 	ldi	tmp,(1<<DDB0)
 	out DDRB,tmp		;Outputs: lamp
-	ldi	tmp,(1<<DDB4) | (1<<DDB2) | (1<<DDB1)
+	ldi	tmp,(1<<DDB2) | (1<<DDB1)
 	out	PORTB,tmp		;Enable input pull-ups
 
 	;Setup ADC

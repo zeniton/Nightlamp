@@ -9,25 +9,7 @@
 ;	Switch lamp on for 2-3hrs at sunset
 ;	Switch lamp on for 10mins when dark & motion detected and lamp is off
 ;	LDR circuit only switched on during measuring
-;       
-;   +5V ---+------+----------------------------+
-;          |      |                            |
-;          |     1k           ATTiny85         |
-;          |      |         +----------+       |
-;         LDR     +--RESET--| 1      8 |--Vcc--+                      +--------+
-;          |                |          |                              |Motion  |
-;          |                | 2      7 |<-PB2-------------------------|detector|
-;          |                |          |                              +--------+
-;          +------ADC2/PB4->| 3      6 |
-;          |                |          |                              +--------+
-;          |      +----GND--| 4      5 |>-PB0-------------------------|  Lamp  |
-;      100k Pot   |         +----------+                              +--------+
-;          |      |
-;          |      |
-;          |      |
-;          |      |
-;   GND ---+------+
-										     
+       
 .nolist
 .include "tn85def.inc"
 .list

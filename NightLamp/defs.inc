@@ -6,10 +6,10 @@
 .def hours	= r20	;Hours counter
 .def system	= r21	;System flags: bit0=1/0(movement/not)
 
-;Flags
-.equ TIMER      = 0
-.equ MOVEMENT   = 1
+;System flags
+.equ LAMP       = 0
+.equ MOTION     = 1
 
 ;I/O
-.equ LAMP       = PB0	;Lamp (output)
-.equ MOTION     = PB2	;Motion detector (input)
+.equ LAMP_IO    = PB0	;Lamp (output)
+.equ MOTION_IO  = PB2	;Motion detector (input)

@@ -16,9 +16,9 @@ reti					;0x000D USI_START
 reti					;0x000E USI_OVF
 
 INT0_ISR: 
-    in status,SREG                 ;Save status
-	ori	system,(1<<MOVEMENT)	;Set system flag
-	out	SREG,status             ;Restore status
+    in status,SREG      ;Save status
+	sbr	system,MOTION   ;Set system flag
+	out	SREG,status     ;Restore status
 	reti
 
 TIMER0_COMPA_ISR:	

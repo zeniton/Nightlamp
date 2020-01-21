@@ -1,7 +1,5 @@
 ;************************************
 ; written by: Stoffel van Aswegen 
-; date: 2019-08-17
-; version: 0.0
 ; for AVR: ATTiny85
 ; clock frequency: 1 MHz
 ; Function: Night light controller with motion detection
@@ -66,18 +64,18 @@ RESET:
 	ldi	tmp,(1<<INT0)
 	out	GIMSK,tmp		;Enable INT0 interrupt
 
-	cbi	PORTB,LAMP		;Lamp off
+	cbi	PORTB,LAMP_IO	;Lamp off
 	clr	system
 	sei                 ;Enable global interrupts
 
 LOOP:
-	sbrs system,MOVEMENT
+	sbrs system,MOTION
 	rjmp LOOP
-	sbi PORTB,LAMP		;Lamp on
+	sbi PORTB,LAMP_IO	;Lamp on
 	ldi hours,3
 	rcall Sub_TimerOn
 	TMR_LOOP:
-		tst secs        ;seconds decremented in ISR
+		tst secs        ;seconds decremented by ISR
 		brne TMR_LOOP
 		tst mins
 		breq TST_HOURS
@@ -92,8 +90,8 @@ LOOP:
 			ldi secs,60
 			rjmp TMR_LOOP
 	EXIT_TMR_LOOP:
-	andi system,(0<<MOVEMENT)	;Clear system flag
-	cbi PORTB,LAMP		;Lamp off
+	cbr system,MOTION   ;Clear system flag
+	cbi PORTB,LAMP_IO	;Lamp off
 	rcall Sub_TimerOff
 	rjmp LOOP
 

@@ -15,7 +15,7 @@ reti					;0x000C WDT
 reti					;0x000D USI_START
 reti					;0x000E USI_OVF
 
-INT0_ISR: 
+INT0_ISR:               ;Motion detection
     in status,SREG      ;Save status
 	sbr	system,MOTION   ;Set system flag
 	out	SREG,status     ;Restore status
@@ -24,9 +24,9 @@ INT0_ISR:
 TIMER0_COMPA_ISR:	
     in status,SREG      ;Save status
 	dec tcint			;Interrupt counter
-	brne EXIT_A
+	brne EXIT_ISR
 	ldi tcint,4			;Reset counter
 	dec secs
-EXIT_A:	
+EXIT_ISR:
     out SREG,status	    ;Restore status
 	reti

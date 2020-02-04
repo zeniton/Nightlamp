@@ -42,6 +42,10 @@ RESET:
 	ldi	tmp,(1<<ADEN)
 	out	ADCSRA,tmp      ;Enable ADC
 
+    ;Set ADC thresholds
+    ldi lo,42
+    ldi hi,84
+
 	;Setup INT0 external interrupt (Motion Detector)
 	clr	tmp
 	out	MCUCR,tmp       ;Trigger INT0 interrupt on low level

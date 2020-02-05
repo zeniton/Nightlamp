@@ -5,7 +5,7 @@
 .def mins	= r19	;Minutes counter
 .def secs   = r20	;Seconds counter
 .def system	= r21	;System flags
-.def a      = r22   ;ADC L measurement
+.def a      = r22   ;ADC(L) measurement
 
 ;System flag bits
 .equ DARK   = 0     ;Outcome of light measurement

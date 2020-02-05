@@ -1,5 +1,5 @@
 .org 0x0000
-rjmp RESET				;0x0000 RESET
+rjmp SETUP				;0x0000 RESET
 rjmp INT0_ISR			;0x0001 INT0
 reti					;0x0002 PCINT0
 reti					;0x0003 TIMER1_COMPA

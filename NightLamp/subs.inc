@@ -45,18 +45,18 @@ MeasureLight:
         out ADCSRA,tmp  ;Clear ADC flag
     ret
 
-IsItDarkYet:
+IsItDark:
     rcall MeasureLight
     ldi tmp,LO
     cp tmp,a            ;Compare measurement to lower threshold
     brge IsDark         ;Lower threshold >= mesaurement
     ldi tmp,HI
     cp a,tmp            ;Compare measurement to higher threshold
-    brge IsNotDark      ;Measurement >= higher threshold
+    brge NotDark        ;Measurement >= higher threshold
     IsDark: 
         sbr system,DARK
-    rjmp Exit_IsItDarkYet
-    IsNotDark: 
+    rjmp Exit_IsItDark
+    NotDark: 
         cbr system,DARK
-    Exit_IsItDarkYet: 
+    Exit_IsItDark: 
     ret

@@ -37,19 +37,26 @@ MeasureLight:
         in tmp,ADCSRA
         sbrs tmp,ADIF
         rjmp WaitForConversion
-
-    ;Read ADC output & determine Dark/Light
-    in al,ADCL
-    in ah,ADCH
-    cp lo,al            ;Compare measurement to lower threshold
-    brge IsDark         ;Lower threshold >= mesaurement
-    cp al,hi            ;Compare measurement to higher threshold
-    brge IsNotDark      ;Measurement >= higher threshold
-    IsDark: sbr system,DARK
-    rjmp StopADC
-    IsNotDark: cbr system,DARK
-    StopADC:
+    in a,ADCL           ;Store the measurement
+    in tmp,ADCH         ;Required to do, not used
+    StopADC:            ;Perhaps an empty ISR can be used instead? #17.13.2 Bit 4 - ADIF
         in tmp,ADCSRA
-        sbr tmp,ADIF
-        out ADCSRA,tmp      ;Clear ADC flag
+        sbr tmp,ADIF    
+        out ADCSRA,tmp  ;Clear ADC flag
+    ret
+
+IsItDarkYet:
+    rcall MeasureLight
+    ldi tmp,LO
+    cp tmp,a            ;Compare measurement to lower threshold
+    brge IsDark         ;Lower threshold >= mesaurement
+    ldi tmp,HI
+    cp a,tmp            ;Compare measurement to higher threshold
+    brge IsNotDark      ;Measurement >= higher threshold
+    IsDark: 
+        sbr system,DARK
+    rjmp Exit_IsItDarkYet
+    IsNotDark: 
+        cbr system,DARK
+    Exit_IsItDarkYet: 
     ret

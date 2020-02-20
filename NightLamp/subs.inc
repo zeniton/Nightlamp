@@ -1,32 +1,44 @@
 TimerOn:
-	ldi tcint,4			;Reset interrupt counter
-	ldi tmp,(1<<CS02)|(1<<CS00)
-	out TCCR0B,tmp		;Prescale Clock/1024
-	ret
+    ldi tcint,4			;Reset interrupt counter
+    ldi tmp,(1<<CS02)|(1<<CS00)
+    out TCCR0B,tmp		;Prescale Clock/1024
+    ret
 
 TimerOff:
-	clr tmp
-	out TCCR0B,tmp		;Stop timer
-	ret
+    clr tmp
+    out TCCR0B,tmp		;Stop timer
+    ret
 
 Wait:
-	rcall TimerOn
-	TMR_LOOP:
-		tst secs        ;seconds decremented by ISR
-		brne TMR_LOOP
-		tst mins
-		breq TST_HOURS
-		dec mins
-		ldi	secs,60
-		rjmp TMR_LOOP
-		TST_HOURS:
-			tst hours
-			breq END_TMR_LOOP
-			dec hours
-			ldi mins,59
-			ldi secs,60
-			rjmp TMR_LOOP
-	END_TMR_LOOP:
+    rcall TimerOn
+    TMR_LOOP:
+        tst secs        ;seconds decremented by ISR
+        brne TMR_LOOP
+        tst mins
+        breq TST_HOURS
+        dec mins
+        ldi	secs,60
+        rjmp TMR_LOOP
+        TST_HOURS:
+            tst hours
+            breq END_TMR_LOOP
+            dec hours
+            ldi mins,59
+            ldi secs,60
+            rjmp TMR_LOOP
+    END_TMR_LOOP:
+    ret
+
+MotDetOn:
+    in tmp,GIMSK
+    sbr tmp,INT0
+    out	GIMSK,tmp       ;Enable motion detector ISR
+    ret
+
+MotDetOff:
+    in tmp,GIMSK
+    cbr tmp,INT0
+    out GIMSK,tmp       ;Disable motion detector ISR
     ret
 
 MeasureLight:
@@ -55,8 +67,35 @@ IsItDark:
     brge NotDark        ;Measurement >= higher threshold
     IsDark: 
         sbr system,DARK
-    rjmp Exit_IsItDark
+        rjmp Exit_IsItDark
     NotDark: 
         cbr system,DARK
     Exit_IsItDark: 
+    ret
+
+Movement:
+    sbi PORTB,LAMP      ;Lamp on
+    ldi mins,10
+    clr hours
+    clr secs
+    rcall Wait          ;Wait 10 minutes
+    cbi PORTB,LAMP      ;Lamp off
+    cbr system,MOTION   ;Clear Motion flag
+    ret
+
+Sunrise:
+    rcall MotDetOff     ;Disable motion detection
+    cbi	PORTB,LAMP      ;Lamp off
+    clr	system          ;Clear flags
+    ret
+
+Sunset:
+    sbr system,NIGHT    ;Set Night flag
+    sbi PORTB,LAMP      ;Lamp on
+    ldi hours,3
+    clr mins
+    clr secs
+    rcall Wait          ;Wait 3 hours
+    cbi PORTB,LAMP      ;Lamp off
+    rcall MotDetOn      ;Enable motion detection
     ret

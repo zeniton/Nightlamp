@@ -35,12 +35,6 @@ SETUP:
     ldi	tmp,(1<<DDB2)
     out	PORTB,tmp       ;Enable input pull-ups
 
-    ;Setup ADC
-    ldi	tmp,(1<<MUX1)   ;ADC2 channel (MUX)
-    out	ADMUX,tmp       ;Vref = Vcc (REFSn)
-    ldi	tmp,(1<<ADEN)
-    out	ADCSRA,tmp      ;Enable ADC
-
     ;Setup INT0 external interrupt (Motion Detector)
     clr	tmp
     out	MCUCR,tmp       ;Trigger INT0 interrupt on low level

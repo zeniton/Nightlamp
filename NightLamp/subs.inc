@@ -42,6 +42,9 @@ MotDetOff:
     ret
 
 MeasureLight:
+    in tmp,ADMUX
+    sbr tmp,MUX1
+    out ADMUX,tmp       ;Select ADC2
     in tmp,ADCSRA
     sbr tmp,ADSC
     out ADCSRA,tmp      ;Start conversion
@@ -49,19 +52,19 @@ MeasureLight:
         in tmp,ADCSRA
         sbrs tmp,ADIF
         rjmp WaitForConversion
-    in a,ADCL           ;Store the measurement
-    in tmp,ADCH         ;Required to do, not used
-    StopADC:            ;Perhaps an empty ISR can be used instead? #17.13.2 Bit 4 - ADIF
+    StopConversion:     ;Perhaps an empty ISR can be used instead? #17.13.2 Bit 4 - ADIF
         in tmp,ADCSRA
         sbr tmp,ADIF    
         out ADCSRA,tmp  ;Clear ADC flag
+    in a,ADCL           ;Store the measurement
+    in tmp,ADCH         ;Required to do, not used
     ret
 
 IsItDark:
     rcall MeasureLight
     ldi tmp,LO
     cp tmp,a            ;Compare measurement to lower threshold
-    brge IsDark         ;Lower threshold >= mesaurement
+    brge IsDark         ;Lower threshold >= measurement
     ldi tmp,HI
     cp a,tmp            ;Compare measurement to higher threshold
     brge NotDark        ;Measurement >= higher threshold

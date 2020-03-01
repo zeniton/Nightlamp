@@ -2,10 +2,10 @@ Background
 ----------
 I need a controller that will switch my porch light on at sunset and remain on for 2-3 hours.
 If I went out for the evening and return home after the light was switched off, the light must be switched on for 10 minutes
-  to allow me to park the car and enter the house.
+to allow me to park the car and enter the house.
   
 For safety reasons, the light and the controller will be powered by the electrical mains (220V AC, in my case) 
-  via a commercial converter that outputs 12V DC.
+via a commercial converter that outputs 12V DC.
   
 Design decisions
 ----------------

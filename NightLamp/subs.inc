@@ -52,7 +52,7 @@ MeasureLight:
         in tmp,ADCSRA
         sbrs tmp,ADIF
         rjmp WaitForConversion
-    StopConversion:     ;Perhaps an empty ISR can be used instead? #17.13.2 Bit 4 - ADIF
+    StopConversion:     ;Perhaps an (empty?) ISR can be used instead? #17.13.2 Bit 4 - ADIF
         in tmp,ADCSRA
         sbr tmp,ADIF    
         out ADCSRA,tmp  ;Clear ADC flag

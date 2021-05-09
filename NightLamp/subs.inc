@@ -1,7 +1,7 @@
 TimerOn:
     ldi tcint,4			;Reset interrupt counter
     ldi tmp,(1<<CS02)|(1<<CS00)
-    out TCCR0B,tmp		;Prescale Clock/1024
+    out TCCR0B,tmp		;Prescale Clock by 1024
     ret
 
 TimerOff:
@@ -12,15 +12,15 @@ TimerOff:
 Wait:
     rcall TimerOn
     TMR_LOOP:
-        tst secs        ;seconds decremented by ISR
+        tst secs        ;secs == 0? (secs decremented by ISR)
         brne TMR_LOOP
-        tst mins
+        tst mins        ;mins == 0?
         breq TST_HOURS
         dec mins
         ldi	secs,60
         rjmp TMR_LOOP
         TST_HOURS:
-            tst hours
+            tst hours   ;hrs == 0?
             breq END_TMR_LOOP
             dec hours
             ldi mins,59

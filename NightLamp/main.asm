@@ -17,6 +17,12 @@
 
 
 SETUP:
+    ;Initialize the stack
+    ldi tmp,low(RAMEND)
+    out spl,tmp
+    ldi tmp,high(RAMEND)
+    out sph,tmp
+
     ;Setup Timer0
     ;   With the 1MHz clock prescaled by 1024, the effective rate is 976Hz
     ;   976 = 244 * 4

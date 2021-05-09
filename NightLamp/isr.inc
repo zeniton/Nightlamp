@@ -16,7 +16,9 @@ reti                    ;0x000D USI_START
 reti                    ;0x000E USI_OVF
 
 INT0_ISR:               ;Something moved
+    in status,SREG
     sbr	system,MOTION
+    out SREG,status
     reti
 
 TIMER0_COMPA_ISR:	

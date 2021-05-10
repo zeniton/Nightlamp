@@ -1,5 +1,5 @@
 .def status = r0    ;Copy of Status Register
-.def a      = r1    ;ADC(L) measurement
+.def level  = r1    ;ADC(L) measurement
 
 .def tmp	= r16   ;General register
 .def tcint	= r17   ;Timer Compare Interrupt counter

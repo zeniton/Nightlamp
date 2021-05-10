@@ -36,10 +36,8 @@ SETUP:
     out TIMSK,tmp       ;Enable output compare interrupt
 
     ;Setup PORTB digital I/O
-    ldi	tmp,(1<<DDB0)
-    out DDRB,tmp        ;Outputs: lamp
-    ldi	tmp,(1<<DDB2)
-    out	PORTB,tmp       ;Enable input pull-up on PB2 (motion detector)
+    sbi DDRB,DDB0       ;Outputs: lamp
+    sbi PORTB,DDB2      ;Enable input pull-up on PB2 (motion detector)
 
     ;Setup INT0 external interrupt (Motion Detector)
     clr	tmp

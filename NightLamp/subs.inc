@@ -31,74 +31,67 @@ Wait:
 
 MotDetOn:
     in tmp,GIMSK
-    sbr tmp,INT0
+    sbr tmp,(1<<INT0)
     out	GIMSK,tmp       ;Enable motion detector ISR
     ret
 
 MotDetOff:
     in tmp,GIMSK
-    cbr tmp,INT0
+    cbr tmp,(1<<INT0)
     out GIMSK,tmp       ;Disable motion detector ISR
     ret
 
 MeasureLight:
-    in tmp,ADMUX
-    sbr tmp,MUX1
-    out ADMUX,tmp       ;Select ADC2
-    in tmp,ADCSRA
-    sbr tmp,ADSC
-    out ADCSRA,tmp      ;Start conversion
+    sbi ADMUX,MUX1      ;Select ADC2
+    sbi ADCSRA,ADSC     ;Start conversion
     WaitForConversion:
         in tmp,ADCSRA
         sbrs tmp,ADIF
         rjmp WaitForConversion
-    StopConversion:     ;Perhaps an (empty?) ISR can be used instead? #17.13.2 Bit 4 - ADIF
-        in tmp,ADCSRA
-        sbr tmp,ADIF    
-        out ADCSRA,tmp  ;Clear ADC flag
-    in a,ADCL           ;Store the measurement
+    sbi ADCSRA,ADIF     ;Clear ADC flag to stop conversion
+    in level,ADCL       ;Store the measurement
     in tmp,ADCH         ;Required to do, not used
     ret
 
 IsItDark:
     rcall MeasureLight
     ldi tmp,LO
-    cp tmp,a            ;Compare measurement to lower threshold
+    cp tmp,level        ;Compare measurement to lower threshold
     brge IsDark         ;Lower threshold >= measurement
     ldi tmp,HI
-    cp a,tmp            ;Compare measurement to higher threshold
+    cp level,tmp        ;Compare measurement to higher threshold
     brge NotDark        ;Measurement >= higher threshold
     IsDark: 
-        sbr system,DARK
+        sbr system,(1<<DARK)
         rjmp Exit_IsItDark
     NotDark: 
-        cbr system,DARK
+        cbr system,(1<<DARK)
     Exit_IsItDark: 
     ret
 
 Movement:
-    sbi PORTB,LAMP      ;Lamp on
+    sbi PORTB,LAMP          ;Lamp on
     ldi mins,10
     clr hours
     clr secs
-    rcall Wait          ;Wait 10 minutes
-    cbi PORTB,LAMP      ;Lamp off
-    cbr system,MOTION   ;Clear Motion flag
+    rcall Wait              ;Wait 10 minutes
+    cbi PORTB,LAMP          ;Lamp off
+    cbr system,(1<<MOTION)  ;Clear Motion flag
     ret
 
 Sunrise:
-    rcall MotDetOff     ;Disable motion detection
-    cbi	PORTB,LAMP      ;Lamp off
-    clr	system          ;Clear flags
+    rcall MotDetOff         ;Disable motion detection
+    cbi	PORTB,LAMP          ;Lamp off
+    clr	system              ;Clear flags
     ret
 
 Sunset:
-    sbr system,NIGHT    ;Set Night flag
-    sbi PORTB,LAMP      ;Lamp on
+    sbr system,(1<<NIGHT)   ;Set Night flag
+    sbi PORTB,LAMP          ;Lamp on
     ldi hours,3
     clr mins
     clr secs
-    rcall Wait          ;Wait 3 hours
-    cbi PORTB,LAMP      ;Lamp off
-    rcall MotDetOn      ;Enable motion detection
+    rcall Wait              ;Wait 3 hours
+    cbi PORTB,LAMP          ;Lamp off
+    rcall MotDetOn          ;Enable motion detection
     ret

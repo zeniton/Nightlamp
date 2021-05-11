@@ -26,7 +26,7 @@ TIMER0_COMPA_ISR:
     dec tcint               ;Interrupt counter
     brne EXIT_ISR
     ldi tcint,4             ;Reset counter
-    dec secs
+    dec tclo
 EXIT_ISR:
     out SREG,status         ;Restore status
     reti

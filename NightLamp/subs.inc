@@ -12,22 +12,16 @@ TimerOff:
 Wait:
     rcall TimerOn
     TMR_LOOP:
-        tst secs        ;secs == 0? (secs decremented by ISR)
-        brne TMR_LOOP
-        tst mins        ;mins == 0?
-        breq TST_HOURS
-        dec mins
-        ldi	secs,60
+        tst tclo            ;tclo decremented by ISR every second
+        brne TMR_LOOP       ;Wait more...
+        tst tchi
+        breq END_TMR_LOOP   ;Timer run out
+        dec tchi            ;Transfer 1 from HI byte to LO byte
+        ldi tclo,0xFF
         rjmp TMR_LOOP
-        TST_HOURS:
-            tst hours   ;hrs == 0?
-            breq END_TMR_LOOP
-            dec hours
-            ldi mins,59
-            ldi secs,60
-            rjmp TMR_LOOP
     END_TMR_LOOP:
-    ret
+        rcall TimerOff
+        ret
 
 MotDetOn:
     in tmp,GIMSK
@@ -71,9 +65,8 @@ IsItDark:
 
 Movement:
     sbi PORTB,LAMP          ;Lamp on
-    ldi mins,10
-    clr hours
-    clr secs
+    ldi tchi,0x02
+    ldi tclo,0x58           ;10min * 60sec/min = 600sec = 0x0258
     rcall Wait              ;Wait 10 minutes
     cbi PORTB,LAMP          ;Lamp off
     cbr system,(1<<MOTION)  ;Clear Motion flag
@@ -88,9 +81,8 @@ Sunrise:
 Sunset:
     sbr system,(1<<NIGHT)   ;Set Night flag
     sbi PORTB,LAMP          ;Lamp on
-    ldi hours,3
-    clr mins
-    clr secs
+    ldi tchi,0x2A
+    ldi tclo,0x30           ;3hr * 60min/hr * 60sec/min = 10800sec = 0x2A30
     rcall Wait              ;Wait 3 hours
     cbi PORTB,LAMP          ;Lamp off
     rcall MotDetOn          ;Enable motion detection

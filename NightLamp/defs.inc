@@ -3,10 +3,9 @@
 
 .def tmp	= r16   ;General register
 .def tcint	= r17   ;Timer Compare Interrupt counter
-.def hours	= r18   ;Hours counter
-.def mins	= r19   ;Minutes counter
-.def secs   = r20   ;Seconds counter
-.def system	= r21   ;System flags
+.def tchi   = r18   ;Timer Counter Hi byte
+.def tclo   = r19   ;Timer Counter Lo byte
+.def system	= r20   ;System flags
 
 ;System flag bits
 .equ DARK   = 0     ;Dark/Light
